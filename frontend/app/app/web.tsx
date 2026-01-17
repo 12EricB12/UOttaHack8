@@ -94,9 +94,14 @@ const MEDIAPIPE_HTML = `
     }
 
     async function startCamera() {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user" }
-      });
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { 
+            facingMode: "environment",
+            // Add these two lines to request a tall video feed
+            width: { ideal: 1080 },
+            height: { ideal: 1920 }
+            }
+        });
 
       video.srcObject = stream;
       video.addEventListener("loadeddata", () => {
@@ -153,8 +158,9 @@ const MEDIAPIPE_HTML = `
 
 export default function WebviewTest() {
   const [poseData, setPoseData] = useState<any>(null);
-  const prevAngleRef = useRef(null);
+  const prevAngleRef = useRef<any | null>(null);
   const [repInProgress, setRepInProgress] = useState<Boolean>(false);
+  const [repCount, setRepCount] = useState(0);
   const [permission, requestPermission] = useCameraPermissions();
 
   const LEFT_HIP = 23;
@@ -163,19 +169,6 @@ export default function WebviewTest() {
   const RIGHT_HIP = 24;
   const RIGHT_KNEE = 26;
   const RIGHT_ANKLE = 28;
-
-  if (!permission?.granted) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <Text
-          onPress={requestPermission}
-          style={{ padding: 20, color: "blue" }}
-        >
-          Click to Grant Camera Permission
-        </Text>
-      </View>
-    );
-  }
 
   // Handle data coming FROM the WebView
   const handleMessage = (event: any) => {
@@ -229,8 +222,39 @@ export default function WebviewTest() {
         jointB: knee,
         jointC: ankle,
       });
+
+      if (repInProgress && currentAngle > prevAngleRef.current - 20) {
+        prevAngleRef.current = currentAngle;
+        setRepInProgress(false);
+        setRepCount(repCount + 1);
+        // Get end video time, and encode
+      }
+
+      if (prevAngleRef.current == null && !repInProgress) {
+        prevAngleRef.current = currentAngle;
+      }
+
+      // Check delta theta
+      if (currentAngle - prevAngleRef.current >= 0.2 && !repInProgress) {
+        setRepInProgress(true);
+        prevAngleRef.current = currentAngle;
+        // Get current video time
+      }
     }
-  });
+  }, [poseData, repInProgress]);
+
+  if (!permission?.granted) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <Text
+          onPress={requestPermission}
+          style={{ padding: 20, color: "blue" }}
+        >
+          Click to Grant Camera Permission
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -254,9 +278,22 @@ export default function WebviewTest() {
         <Text style={styles.text}>
           {poseData ? "Body Detected!" : "Looking for body..."}
         </Text>
-        <Text style={styles.text}>
-          Left Knee: {poseData ? poseData[LEFT_KNEE].y.toFixed(2) : "0.00"}
-        </Text>
+        {poseData ? (
+          <Text style={styles.text}>
+            Left Knee: {poseData[LEFT_KNEE].y.toFixed(2)} {"\n"}
+            Reps done: {repCount} {"\n"}
+            Current theta:{" "}
+            {findAngle({
+              jointA: poseData[LEFT_HIP],
+              jointB: poseData[LEFT_KNEE],
+              jointC: poseData[LEFT_ANKLE],
+            })}{" "}
+            {"\n"}
+            Prev theta: {prevAngleRef.current}
+          </Text>
+        ) : (
+          <Text>No Pose</Text>
+        )}
       </View>
     </SafeAreaView>
   );
