@@ -1,0 +1,10 @@
+prefix=/../..
+exec_prefix=
+includedir=/
+libdir=/
+
+Name: SmartSpectra C++ SDK
+Description: Presage Technologies SmartSpectra C++ SDK is an easy-to-use C++ framework for physiological metric computation from live video / webcams, video files, or image video frames.
+Version: 2.1.0
+Libs: -L -lhouse
+Cflags: -I

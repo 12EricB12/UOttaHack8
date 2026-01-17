@@ -1,0 +1,14 @@
+{
+  "name": "nodejs",
+  "version": "1.0.0",
+  "description": "express js for smatspectra application",
+  "main": "smartspectra",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "wenyu",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
