@@ -1,3 +1,0 @@
-/home/wensun/Documents/Projects/cplusplus/build/CMakeFiles/hello_vitals.dir
-/home/wensun/Documents/Projects/cplusplus/build/CMakeFiles/edit_cache.dir
-/home/wensun/Documents/Projects/cplusplus/build/CMakeFiles/rebuild_cache.dir
