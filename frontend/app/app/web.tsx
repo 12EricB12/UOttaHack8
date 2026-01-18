@@ -25,6 +25,7 @@ const MEDIAPIPE_HTML = `
     }
     video, canvas {
       position: absolute;
+      transform: scaleX(-1);
       top: 0;
       left: 0;
       width: 100%;
