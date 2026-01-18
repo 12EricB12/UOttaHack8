@@ -156,11 +156,39 @@ const MEDIAPIPE_HTML = `
 </html>
 `;
 
+const CountdownTimer = ({ initialValue }: any) => {
+  const [timerCount, setTimer] = useState(initialValue || 60);
+
+  useEffect(() => {
+    // Start an interval that decrements the timer count every second
+    let interval = setInterval(() => {
+      setTimer((lastTimerCount: any) => {
+        if (lastTimerCount <= 1) {
+          // Clear the interval when the timer reaches 0 or less
+          clearInterval(interval);
+        }
+        return lastTimerCount - 1;
+      });
+    }, 1000); // 1000 milliseconds = 1 second
+
+    // Cleanup function to clear the interval when the component unmounts
+    return () => clearInterval(interval);
+  }, []); // The empty dependency array ensures the effect runs only once on mount
+
+  return (
+    <View>
+      <Text style={{ color: "white" }}>Time until start:</Text>
+      <Text style={{ color: "white" }}>{timerCount}</Text>
+    </View>
+  );
+};
+
 export default function WebviewTest() {
   const [poseData, setPoseData] = useState<any>(null);
   const prevAngleRef = useRef<any | null>(null);
   const [repInProgress, setRepInProgress] = useState<Boolean>(false);
   const [repCount, setRepCount] = useState(0);
+  const [isMeasuring, setIsMeasuring] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
 
   const LEFT_HIP = 23;
@@ -223,7 +251,7 @@ export default function WebviewTest() {
         jointC: ankle,
       });
 
-      if (repInProgress && currentAngle > prevAngleRef.current - 20) {
+      if (repInProgress && currentAngle > 165) {
         prevAngleRef.current = currentAngle;
         setRepInProgress(false);
         setRepCount(repCount + 1);
@@ -235,13 +263,16 @@ export default function WebviewTest() {
       }
 
       // Check delta theta
-      if (currentAngle - prevAngleRef.current >= 0.2 && !repInProgress) {
-        setRepInProgress(true);
+      const dT = currentAngle - prevAngleRef.current;
+      if (!repInProgress) {
         prevAngleRef.current = currentAngle;
-        // Get current video time
+        if (dT >= 10 && dT < 75) {
+          setRepInProgress(true);
+          // Get current video time
+        }
       }
     }
-  }, [poseData, repInProgress]);
+  }, [poseData, isMeasuring]);
 
   if (!permission?.granted) {
     return (
@@ -273,7 +304,13 @@ export default function WebviewTest() {
         mixedContentMode="always"
         mediaCapturePermissionGrantType="grant"
       />
-
+      <CountdownTimer
+        initialValue={10}
+        onFinish={() => {
+          console.log("Timer finished!");
+          setIsMeasuring(true);
+        }}
+      />
       <View style={styles.overlay}>
         <Text style={styles.text}>
           {poseData ? "Body Detected!" : "Looking for body..."}
