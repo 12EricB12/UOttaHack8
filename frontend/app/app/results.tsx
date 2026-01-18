@@ -5,8 +5,37 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 function ResultsScreen({navigation}: {navigation: any}) {
   return (
     <View style={styles.container}>
+            {/* Header */}
+            <Text style={styles.header}>My Results</Text>
+    
+            {/*Score in a circle here*/}
+            <View style={styles.circle}>
+                <Text style={{fontSize: 48, fontWeight: 'bold', alignSelf: 'center'}}>Score:</Text>
+                <Text style={{fontSize: 24, fontWeight: '500', alignSelf: 'center'}}>score goes here</Text>
+            </View>
+
+            {/*Table*/}
+            <View style={styles.table}>
+                <View style={styles.row}>
+                    <Text style={styles.label}>Time of Completion:
+                    </Text>
+                    <Text style={styles.value}>00:00</Text>
+                </View>
+            </View>
+            
+            <Text style={{fontSize: 20, top: 400, textDecorationLine: "underline", fontWeight: "bold", alignSelf: "center"}}>Tips and Feedback</Text>
+            <Text style={{fontSize: 16, top: 420, marginHorizontal: 30, alignSelf: "center"}}>feedback goes here</Text>
         
-    </View> 
+            {/* Bottom Navigation Bar */}
+            <View style={styles.bottomBar}>
+                <TouchableOpacity
+                    style={styles.navButton}
+                    onPress={() => navigation.navigate("Home")}
+                    >
+                    <Text style={styles.navText}>Home</Text>
+                </TouchableOpacity>
+            </View>
+        </View> 
   );
 }
 
@@ -23,12 +52,24 @@ const styles = StyleSheet.create({
         marginBottom: 20,
         textDecorationLine: "underline",
     },
+    circle: {
+        width: 300,
+        height: 300,
+        borderRadius: 150,
+        backgroundColor: '#fff',
+        justifyContent: 'center',
+        alignSelf: 'center',
+        position: 'absolute',
+        top: 120,
+        marginVertical: 20,
+    },
     table: {
         width: "90%",
         borderWidth: 1,
         borderColor: "#000",
         borderRadius: 8,
         overflow: "hidden",
+        top: 350,
     },
     row: {
         flexDirection: "row",

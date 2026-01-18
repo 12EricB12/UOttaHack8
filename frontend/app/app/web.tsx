@@ -5,6 +5,7 @@ import { Camera, useCameraPermissions } from "expo-camera"; // Just for permissi
 import { Double } from "react-native/Libraries/Types/CodegenTypes";
 import * as FileSystem from "expo-file-system/legacy";
 import * as MediaLibrary from "expo-media-library";
+import { useNavigation } from "@react-navigation/native";
 
 // This is the HTML/JS code that runs INSIDE the hidden browser
 // Stolen and converted from https://codepen.io/mediapipe-preview/pen/abRLMxN
@@ -258,8 +259,8 @@ const CountdownTimer = ({ initialValue, onFinish }: any) => {
 
   return (
     <View style={{ justifyContent: "center", alignSelf: "center", flex: 1, position: "absolute", top: 0, bottom: 0,}}>
-      <Text style={{ color: "white" }}>GET INTO POSITION!!</Text>
-      <Text style={{ color: "white", left: 62 }}>{timerCount}</Text>
+      <Text style={{ color: "white", fontSize: 36, fontWeight: "bold", alignSelf: "center" }}>GET INTO POSITION!!</Text>
+      <Text style={{ color: "white", fontSize: 24, fontWeight: "bold", alignSelf: "center" }}>{timerCount}</Text>
     </View>
   );
 };
@@ -280,7 +281,7 @@ const getAverage = (array: any[]) => {
   return s / len;
 };
 
-export default function WebviewTest() {
+function WebviewTest({navigation}: {navigation: any}) {
   const webviewRef = useRef<WebView>(null);
   const [poseData, setPoseData] = useState<any>(null);
   const prevAngleRef = useRef<any | null>(null);
@@ -451,13 +452,10 @@ export default function WebviewTest() {
   }, [poseData, isMeasuring]);
 
   useEffect(() => {
-    if (allScores.current.length == max_num_reps) {
-      Alert.alert(
-        "Your average score is...",
-        getAverage(allScores.current).toString(),
-      );
+    if (repCount >=  max_num_reps) {
+      navigation.navigate("Results");
     }
-  }, [allScores]);
+  } );
 
   if (!permission?.granted) {
     return (
@@ -498,21 +496,13 @@ export default function WebviewTest() {
         }}
       />
       <View style={styles.overlay}>
-        <Text style={styles.text}>
+        <Text style={[styles.text, { fontSize: 24, fontWeight: "bold", alignSelf: "center"}]}>
           {poseData ? "Body Detected!" : "Loading..."}
         </Text>
         {poseData ? (
           <Text style={styles.text}>
             Left Knee: {poseData[LEFT_KNEE].y.toFixed(2)} {"\n"}
-            Reps done: {repCount >= max_num_reps ? "Done!" : repCount} {"\n"}
-            Current theta:{" "}
-            {findAngle({
-              jointA: poseData[LEFT_HIP],
-              jointB: poseData[LEFT_KNEE],
-              jointC: poseData[LEFT_ANKLE],
-            })}{" "}
-            {"\n"}
-            Prev theta: {prevAngleRef.current} */}
+            Reps done: {repCount >= max_num_reps ? "Done!" : repCount}
           </Text>
         ) : (
           <Text>No Pose</Text>
@@ -535,3 +525,5 @@ const styles = StyleSheet.create({
   },
   text: { color: "white", fontSize: 24 },
 });
+
+export default WebviewTest;

@@ -55,16 +55,6 @@ function HomeScreen({ navigation }: { navigation: any }) {
           <Text style={styles.bigButtonText}>Start A Ranked Workout!</Text>
         </TouchableOpacity>
       </View>
-
-      {/* Manual Bottom Layout (Footer) */}
-      <View style={styles.bottomBar}>
-        <TouchableOpacity
-          style={styles.navButton}
-          onPress={() => navigation.navigate("UserStats")}
-        >
-          <Text style={styles.navText}>My Stats</Text>
-        </TouchableOpacity>
-      </View>
     </View>
     </LinearGradient>
   );
