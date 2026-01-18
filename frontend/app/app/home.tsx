@@ -1,19 +1,17 @@
-import React, { useState, useEffect } from "react";
+import { LinearGradient } from "expo-linear-gradient";
+import React from "react";
 import {
+  Image,
   StyleSheet,
   Text,
-  View,
   TouchableOpacity,
-  Button,
-  Dimensions,
-  Image,
+  View
 } from "react-native";
-import {LinearGradient} from "expo-linear-gradient";
 
 function HomeScreen({ navigation }: { navigation: any }) {
   return (
     <LinearGradient
-        colors={['#ffffff', '#a998d7']}
+        colors={['#ffffff', '#ee8d2f']}
         style={styles.background}
     >
     <View style={styles.container}>
@@ -34,7 +32,7 @@ function HomeScreen({ navigation }: { navigation: any }) {
       }}
       />
 
-      <Text style={styles.titleText}>GymBroAI</Text>
+      <Text style={styles.titleText}>FORMWATCH</Text>
       <Text style={{color: "black",
                     position: "absolute",
                     top: 120,
@@ -84,7 +82,7 @@ const styles = StyleSheet.create({
   },
   // Home Screen Styles
   bigButton: {
-    backgroundColor: "#007AFF", // Standard blue
+    backgroundColor: "#a107ac", // Standard blue
     paddingVertical: 20,
     paddingHorizontal: 40,
     borderRadius: 12,
@@ -107,7 +105,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-around",
     alignItems: "center",
     paddingBottom: 19, // Padding for safe area usually
-    backgroundColor: "#b0a2da",
+    backgroundColor: "#fa9938",
   },
   navButton: {
     padding: 10,
