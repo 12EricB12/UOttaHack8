@@ -264,12 +264,23 @@ const CountdownTimer = ({ initialValue, onFinish }: any) => {
   );
 };
 
-const getAverage = (array: Double[]) => {
+const getAverage = (array: any[]) => {
+  console.log(`A: ${array}`);
   if (array.length === 0) return 0; // Prevents division by zero for empty arrays
-  return array.reduce((acc, c): Double => acc + c, 0) / array.length;
+  
+  let len = array.length;
+  let s = 0;
+  array.forEach((element) => {
+    if (element == undefined || element == null) {
+      len -= 1;
+    } else {
+      s += element;
+    }
+  });
+  return s / len;
 };
 
-function WebviewTest({navigation}: {navigation: any}) {
+export default function WebviewTest() {
   const webviewRef = useRef<WebView>(null);
   const [poseData, setPoseData] = useState<any>(null);
   const prevAngleRef = useRef<any | null>(null);
@@ -279,7 +290,7 @@ function WebviewTest({navigation}: {navigation: any}) {
   const [permission, requestPermission] = useCameraPermissions();
   const [mediaPermission, requestMediaPermission] =
     MediaLibrary.usePermissions(); // <--- ADD THIS
-  const allScores = new Array(10);
+  const allScores = useRef<any[]>([]);
 
   const LEFT_HIP = 23;
   const LEFT_KNEE = 25;
@@ -287,7 +298,7 @@ function WebviewTest({navigation}: {navigation: any}) {
   const RIGHT_HIP = 24;
   const RIGHT_KNEE = 26;
   const RIGHT_ANKLE = 28;
-  const max_num_reps = 10;
+  const max_num_reps = 3;
 
   // Handle data coming FROM the WebView
   const handleMessage = async (event: any) => {
@@ -379,7 +390,13 @@ function WebviewTest({navigation}: {navigation: any}) {
 
       const data = await response.json();
       console.log("Analysis Results:", data);
-      allScores[repCount] = data.analysis.overall_rating;
+
+      if (data.analysis == undefined || data.analysis == null) {
+        allScores.current.push(null);
+      } else {
+        allScores.current.push(data.analysis.overall_rating);
+      }
+      console.log(allScores.current);
     } catch (error) {
       console.error("Analysis failed:", error);
     }
@@ -407,13 +424,6 @@ function WebviewTest({navigation}: {navigation: any}) {
         setRepInProgress(false);
         setRepCount(repCount + 1);
 
-        if (repCount == max_num_reps - 1) {
-          {/*Alert.alert(
-            "Your average score is...",
-            getAverage(allScores).toString(),
-          );*/}
-          navigation.navigate("Results");
-        }
         // Get end video time, and encode
         setTimeout(() => {
           webviewRef.current?.postMessage(
@@ -439,6 +449,15 @@ function WebviewTest({navigation}: {navigation: any}) {
       }
     }
   }, [poseData, isMeasuring]);
+
+  useEffect(() => {
+    if (allScores.current.length == max_num_reps) {
+      Alert.alert(
+        "Your average score is...",
+        getAverage(allScores.current).toString(),
+      );
+    }
+  }, [allScores]);
 
   if (!permission?.granted) {
     return (
@@ -484,9 +503,9 @@ function WebviewTest({navigation}: {navigation: any}) {
         </Text>
         {poseData ? (
           <Text style={styles.text}>
-          {/* Left Knee: {poseData[LEFT_KNEE].y.toFixed(2)} {"\n"} */}
-            Reps done: {repCount}
-            {/* Current theta:{" "}
+            Left Knee: {poseData[LEFT_KNEE].y.toFixed(2)} {"\n"}
+            Reps done: {repCount >= max_num_reps ? "Done!" : repCount} {"\n"}
+            Current theta:{" "}
             {findAngle({
               jointA: poseData[LEFT_HIP],
               jointB: poseData[LEFT_KNEE],
@@ -516,5 +535,3 @@ const styles = StyleSheet.create({
   },
   text: { color: "white", fontSize: 24 },
 });
-
-export default WebviewTest;
