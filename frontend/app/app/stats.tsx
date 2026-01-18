@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 function UserStatsScreen({navigation}: {navigation: any}) {
   return (
@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingTop: 80,
         alignItems: "center",
-        backgroundColor: "#a998d7",
+        backgroundColor: "#ee8d2f",
     },
     header: {
         fontSize: 28,
@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     },
     value: {
         fontSize: 16,
-        color: "#555",
+        color: "#000",
     },
     bottomBar: {
         flexDirection: "row",
@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
         right: 0,
         alignItems: "center",
         paddingBottom: 19, // Padding for safe area usually
-        backgroundColor: "#a998d7",
+        backgroundColor: "#ee8d2f",
     },
     navButton: {
         padding: 10,
