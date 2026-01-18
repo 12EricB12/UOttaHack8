@@ -5,6 +5,7 @@ import { Camera, useCameraPermissions } from "expo-camera"; // Just for permissi
 import { Double } from "react-native/Libraries/Types/CodegenTypes";
 import * as FileSystem from "expo-file-system/legacy";
 import * as MediaLibrary from "expo-media-library";
+import { useNavigation } from "@react-navigation/native";
 
 // This is the HTML/JS code that runs INSIDE the hidden browser
 // Stolen and converted from https://codepen.io/mediapipe-preview/pen/abRLMxN
@@ -29,9 +30,10 @@ const MEDIAPIPE_HTML = `
       position: absolute;
       top: 0;
       left: 0;
-      width: 100%;
+      widthf: 100%;
       height: 100%;
       object-fit: cover;
+      transform: scaleX(-1);
     }
     #status {
       position: absolute;
@@ -51,7 +53,6 @@ const MEDIAPIPE_HTML = `
   <div class="container">
     <video id="webcam" autoplay muted playsinline></video>
     <canvas id="output_canvas"></canvas>
-    <div id="status">Loading model...</div>
   </div>
 
   <script type="module">
@@ -157,12 +158,10 @@ const MEDIAPIPE_HTML = `
     }
 
     async function init() {
-      log("Loading WASM...");
       const vision = await FilesetResolver.forVisionTasks(
         "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm"
       );
 
-      log("Loading pose model...");
       poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
         baseOptions: {
           modelAssetPath:
@@ -172,8 +171,6 @@ const MEDIAPIPE_HTML = `
         runningMode: "VIDEO",
         numPoses: 1
       });
-
-      log("Requesting camera...");
       startCamera();
     }
 
@@ -192,7 +189,6 @@ const MEDIAPIPE_HTML = `
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         running = true;
-        log("Detecting pose...");
         requestAnimationFrame(loop);
       });
     }
@@ -226,8 +222,6 @@ const MEDIAPIPE_HTML = `
               data: result.landmarks[0]
             })
           );
-        } else {
-          log("Scanning...");
         }
       }
 
@@ -251,7 +245,7 @@ const CountdownTimer = ({ initialValue, onFinish }: any) => {
           // Clear the interval when the timer reaches 0 or less
           clearInterval(interval);
           onFinish?.();
-          return;
+          return 0;
         }
         return lastTimerCount - 1;
       });
@@ -261,10 +255,39 @@ const CountdownTimer = ({ initialValue, onFinish }: any) => {
     return () => clearInterval(interval);
   }, []); // The empty dependency array ensures the effect runs only once on mount
 
+  if (timerCount <= 0) return null;
+
   return (
-    <View style={{ justifyContent: "center", alignSelf: "center" }}>
-      <Text style={{ color: "white" }}>Time until start:</Text>
-      <Text style={{ color: "white" }}>{timerCount}</Text>
+    <View
+      style={{
+        justifyContent: "center",
+        alignSelf: "center",
+        flex: 1,
+        position: "absolute",
+        top: 0,
+        bottom: 0,
+      }}
+    >
+      <Text
+        style={{
+          color: "white",
+          fontSize: 36,
+          fontWeight: "bold",
+          alignSelf: "center",
+        }}
+      >
+        GET INTO POSITION!!
+      </Text>
+      <Text
+        style={{
+          color: "white",
+          fontSize: 24,
+          fontWeight: "bold",
+          alignSelf: "center",
+        }}
+      >
+        {timerCount}
+      </Text>
     </View>
   );
 };
@@ -285,7 +308,7 @@ const getAverage = (array: any[]) => {
   return s / len;
 };
 
-export default function WebviewTest() {
+function WebviewTest({ navigation }: { navigation: any }) {
   const webviewRef = useRef<WebView>(null);
   const [poseData, setPoseData] = useState<any>(null);
   const prevAngleRef = useRef<any | null>(null);
@@ -366,7 +389,7 @@ export default function WebviewTest() {
         type: "video/webm",
       } as any);
 
-      const response = await fetch("http://10.198.71.51:3000/upload", {
+      const response = await fetch("http://10.198.84.175:3000/upload", {
         method: "POST",
         body: formData,
         headers: { Accept: "application/json" },
@@ -390,7 +413,7 @@ export default function WebviewTest() {
 
       // Pass the filename dynamically here
       const response = await fetch(
-        `http://10.198.71.51:3000/analyze-gemini?filename=${filename}`,
+        `http://10.198.84.175:3000/analyze-gemini?filename=${filename}`,
       );
 
       const data = await response.json();
@@ -456,13 +479,10 @@ export default function WebviewTest() {
   }, [poseData, isMeasuring]);
 
   useEffect(() => {
-    if (allScores.current.length >= max_num_reps) {
-      Alert.alert(
-        "Your average score is...",
-        getAverage(allScores.current).toString(),
-      );
+    if (repCount >= max_num_reps) {
+      navigation.navigate("Results");
     }
-  }, [allScores]);
+  });
 
   if (!permission?.granted) {
     return (
@@ -496,28 +516,25 @@ export default function WebviewTest() {
         mediaCapturePermissionGrantType="grant"
       />
       <CountdownTimer
-        initialValue={10}
+        initialValue={5}
         onFinish={() => {
           console.log("Timer finished!");
           setIsMeasuring(true);
         }}
       />
       <View style={styles.overlay}>
-        <Text style={styles.text}>
-          {poseData ? "Body Detected!" : "Looking for body..."}
+        <Text
+          style={[
+            styles.text,
+            { fontSize: 24, fontWeight: "bold", alignSelf: "center" },
+          ]}
+        >
+          {poseData ? "Body Detected!" : "Loading..."}
         </Text>
         {poseData ? (
           <Text style={styles.text}>
             Left Knee: {poseData[LEFT_KNEE].y.toFixed(2)} {"\n"}
-            Reps done: {repCount >= max_num_reps ? "Done!" : repCount} {"\n"}
-            Current theta:{" "}
-            {findAngle({
-              jointA: poseData[LEFT_HIP],
-              jointB: poseData[LEFT_KNEE],
-              jointC: poseData[LEFT_ANKLE],
-            })}{" "}
-            {"\n"}
-            Prev theta: {prevAngleRef.current}
+            Reps done: {repCount >= max_num_reps ? "Done!" : repCount}
           </Text>
         ) : (
           <Text>No Pose</Text>
@@ -532,11 +549,13 @@ const styles = StyleSheet.create({
   webview: { flex: 1, backgroundColor: "transparent" },
   overlay: {
     position: "absolute",
-    bottom: 50,
-    left: 20,
+    top: 80,
+    left: 30,
     backgroundColor: "rgba(0,0,0,0.7)",
     padding: 10,
     borderRadius: 8,
   },
-  text: { color: "white", fontSize: 18 },
+  text: { color: "white", fontSize: 24 },
 });
+
+export default WebviewTest;

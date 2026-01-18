@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "GymBroAI",
+    "name": "FORMWATCH",
     "slug": "app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -51,7 +51,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/appicon.png",
+          "image": "./assets/images/applogo.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#000000",
