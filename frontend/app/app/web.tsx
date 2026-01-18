@@ -3,6 +3,8 @@ import { StyleSheet, View, Text, SafeAreaView } from "react-native";
 import { WebView } from "react-native-webview";
 import { Camera, useCameraPermissions } from "expo-camera"; // Just for permission requesting
 import { Double } from "react-native/Libraries/Types/CodegenTypes";
+import * as FileSystem from "expo-file-system/legacy";
+import * as MediaLibrary from "expo-media-library";
 
 // This is the HTML/JS code that runs INSIDE the hidden browser
 // Stolen and converted from https://codepen.io/mediapipe-preview/pen/abRLMxN
@@ -25,6 +27,7 @@ const MEDIAPIPE_HTML = `
     }
     video, canvas {
       position: absolute;
+      transform: scaleX(-1);
       top: 0;
       left: 0;
       width: 100%;
@@ -53,6 +56,27 @@ const MEDIAPIPE_HTML = `
   </div>
 
   <script type="module">
+    // --- ADD THIS LOGGING BRIDGE ---
+    const originalLog = console.log;
+    const originalError = console.error;
+
+    console.log = (...args) => {
+      originalLog(...args); // still log internally
+      // Send to React Native
+      window.ReactNativeWebView.postMessage(JSON.stringify({ 
+        type: 'CONSOLE_LOG', 
+        data: args.map(a => String(a)).join(' ') 
+      }));
+    };
+
+    console.error = (...args) => {
+      originalError(...args);
+      window.ReactNativeWebView.postMessage(JSON.stringify({ 
+        type: 'CONSOLE_ERROR', 
+        data: args.map(a => String(a)).join(' ') 
+      }));
+    };
+
     import {
       PoseLandmarker,
       FilesetResolver,
@@ -66,7 +90,68 @@ const MEDIAPIPE_HTML = `
 
     let poseLandmarker;
     let running = false;
+    let mediaRecorder;     // <--- NEW: Recorder variable
+    let recordedChunks = []; // <--- NEW: Buffer for video data
     let lastVideoTime = -1;
+
+    // --- NEW: LISTEN FOR COMMANDS FROM REACT NATIVE ---
+    // We listen for "START_RECORD" and "STOP_RECORD"
+    document.addEventListener("message", (event) => {
+      handleRNMessage(event);
+    });
+    window.addEventListener("message", (event) => {
+      handleRNMessage(event);
+    });
+
+    function handleRNMessage(event) {
+        try {
+            const message = JSON.parse(event.data);
+            if (message.type === "START_RECORD") startRecording();
+            if (message.type === "STOP_RECORD") stopRecording();
+        } catch(e) { console.log(e) }
+    }
+
+    // --- NEW: RECORDING FUNCTIONS ---
+    function startRecording() {
+        if (!video.srcObject) return;
+        
+        // Create recorder if it doesn't exist
+        // Note: mimeType 'video/webm' is standard for web. 
+        // We can convert to mp4 on backend if needed.
+        const options = { mimeType: "video/webm" };
+        mediaRecorder = new MediaRecorder(video.srcObject, options);
+
+        recordedChunks = [];
+        mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+                recordedChunks.push(event.data);
+            }
+        };
+
+        mediaRecorder.onstop = () => {
+            const blob = new Blob(recordedChunks, { type: "video/webm" });
+            const reader = new FileReader();
+            reader.readAsDataURL(blob); 
+            reader.onloadend = () => {
+                const base64data = reader.result;
+                // Send the Base64 video string back to RN
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                    type: "VIDEO_RESULT",
+                    data: base64data
+                }));
+            };
+        };
+
+        mediaRecorder.start();
+        console.log("Recording started...");
+    }
+
+    function stopRecording() {
+        if (mediaRecorder && mediaRecorder.state !== "inactive") {
+            mediaRecorder.stop();
+            console.log("Recording stopped...");
+        }
+    }
 
     function log(msg) {
       status.innerText = msg;
@@ -94,9 +179,14 @@ const MEDIAPIPE_HTML = `
     }
 
     async function startCamera() {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user" }
-      });
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { 
+            facingMode: "environment",
+            // Add these two lines to request a tall video feed
+            width: { ideal: 1080 },
+            height: { ideal: 1920 }
+            }
+        });
 
       video.srcObject = stream;
       video.addEventListener("loadeddata", () => {
@@ -151,11 +241,45 @@ const MEDIAPIPE_HTML = `
 </html>
 `;
 
+const CountdownTimer = ({ initialValue, onFinish }: any) => {
+  const [timerCount, setTimer] = useState(initialValue || 60);
+
+  useEffect(() => {
+    // Start an interval that decrements the timer count every second
+    let interval = setInterval(() => {
+      setTimer((lastTimerCount: any) => {
+        if (lastTimerCount <= 1) {
+          // Clear the interval when the timer reaches 0 or less
+          clearInterval(interval);
+          onFinish?.();
+          return;
+        }
+        return lastTimerCount - 1;
+      });
+    }, 1000); // 1000 milliseconds = 1 second
+
+    // Cleanup function to clear the interval when the component unmounts
+    return () => clearInterval(interval);
+  }, []); // The empty dependency array ensures the effect runs only once on mount
+
+  return (
+    <View>
+      <Text style={{ color: "white" }}>Time until start:</Text>
+      <Text style={{ color: "white" }}>{timerCount}</Text>
+    </View>
+  );
+};
+
 export default function WebviewTest() {
+  const webviewRef = useRef<WebView>(null);
   const [poseData, setPoseData] = useState<any>(null);
-  const prevAngleRef = useRef(null);
+  const prevAngleRef = useRef<any | null>(null);
   const [repInProgress, setRepInProgress] = useState<Boolean>(false);
+  const [repCount, setRepCount] = useState(0);
+  const [isMeasuring, setIsMeasuring] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
+  const [mediaPermission, requestMediaPermission] =
+    MediaLibrary.usePermissions(); // <--- ADD THIS
 
   const LEFT_HIP = 23;
   const LEFT_KNEE = 25;
@@ -164,25 +288,26 @@ export default function WebviewTest() {
   const RIGHT_KNEE = 26;
   const RIGHT_ANKLE = 28;
 
-  if (!permission?.granted) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <Text
-          onPress={requestPermission}
-          style={{ padding: 20, color: "blue" }}
-        >
-          Click to Grant Camera Permission
-        </Text>
-      </View>
-    );
-  }
-
   // Handle data coming FROM the WebView
   const handleMessage = (event: any) => {
     try {
       const message = JSON.parse(event.nativeEvent.data);
+
+      // Case A: Pose Data
       if (message.type === "pose") {
         setPoseData(message.data);
+      }
+      // Case B: Video Data (The new part)
+      else if (message.type === "VIDEO_RESULT") {
+        console.log("Receiving video data...");
+        console.log("VIDEO RECEIVED, length:", message.data.length);
+        saveVideoFile(message.data);
+      }
+      // Case C: Console Logs (The debug part)
+      else if (message.type === "CONSOLE_LOG") {
+        console.log("webview 🟢:", message.data);
+      } else if (message.type === "CONSOLE_ERROR") {
+        console.error("webview 🔴:", message.data);
       }
     } catch (e) {
       console.error("JSON Error", e);
@@ -213,8 +338,43 @@ export default function WebviewTest() {
     return Math.acos(clamp) * (180 / Math.PI);
   };
 
+  const saveVideoFile = async (base64String: string) => {
+    try {
+      console.log("Saving video...");
+
+      // Check/Request Media Permissions first
+      if (!mediaPermission?.granted) {
+        const response = await requestMediaPermission();
+        if (!response.granted) {
+          alert("Permission to save video is required!");
+          return;
+        }
+      }
+
+      const base64Data = base64String.split(",")[1];
+
+      const fileUri = FileSystem.cacheDirectory + `rep_${Date.now()}.webm`;
+
+      // 1. Write to cache
+      await FileSystem.writeAsStringAsync(fileUri, base64Data, {
+        encoding: "base64",
+      });
+
+      console.log("Written to cache:", fileUri);
+
+      // 2. Save to gallery
+      const asset = await MediaLibrary.createAssetAsync(fileUri);
+
+      await MediaLibrary.createAlbumAsync("WorkoutReps", asset, false);
+
+      alert("Video saved to gallery!");
+    } catch (err) {
+      console.error("SAVE FAILED:", err);
+    }
+  };
+
   useEffect(() => {
-    if (!poseData) return;
+    if (!poseData || !isMeasuring) return;
 
     // 2. Extract the specific joint objects from the array
     const hip = poseData[LEFT_HIP]; // Index 23
@@ -229,13 +389,55 @@ export default function WebviewTest() {
         jointB: knee,
         jointC: ankle,
       });
+
+      if (repInProgress && currentAngle > 165) {
+        prevAngleRef.current = currentAngle;
+        setRepInProgress(false);
+        setRepCount(repCount + 1);
+        // Get end video time, and encode
+        setTimeout(() => {
+          webviewRef.current?.postMessage(
+            JSON.stringify({ type: "STOP_RECORD" }),
+          );
+        }, 200);
+      }
+
+      if (prevAngleRef.current == null && !repInProgress) {
+        prevAngleRef.current = currentAngle;
+      }
+
+      // Check delta theta
+      const dT = prevAngleRef.current - currentAngle;
+
+      if (dT >= 10 && dT < 75 && !repInProgress) {
+        prevAngleRef.current = currentAngle;
+        setRepInProgress(true);
+        // Get current video time
+        webviewRef.current?.postMessage(
+          JSON.stringify({ type: "START_RECORD" }),
+        );
+      }
     }
-  });
+  }, [poseData, isMeasuring]);
+
+  if (!permission?.granted) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <Text
+          onPress={requestPermission}
+          style={{ padding: 20, color: "blue" }}
+        >
+          Click to Grant Camera Permission
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       {/* The "Camera" is actually just a web browser showing a webpage */}
       <WebView
+        ref={webviewRef}
         style={styles.webview}
         source={{ html: MEDIAPIPE_HTML, baseUrl: "https://localhost/" }}
         javaScriptEnabled={true}
@@ -249,14 +451,33 @@ export default function WebviewTest() {
         mixedContentMode="always"
         mediaCapturePermissionGrantType="grant"
       />
-
+      <CountdownTimer
+        initialValue={10}
+        onFinish={() => {
+          console.log("Timer finished!");
+          setIsMeasuring(true);
+        }}
+      />
       <View style={styles.overlay}>
         <Text style={styles.text}>
           {poseData ? "Body Detected!" : "Looking for body..."}
         </Text>
-        <Text style={styles.text}>
-          Left Knee: {poseData ? poseData[LEFT_KNEE].y.toFixed(2) : "0.00"}
-        </Text>
+        {poseData ? (
+          <Text style={styles.text}>
+            Left Knee: {poseData[LEFT_KNEE].y.toFixed(2)} {"\n"}
+            Reps done: {repCount} {"\n"}
+            Current theta:{" "}
+            {findAngle({
+              jointA: poseData[LEFT_HIP],
+              jointB: poseData[LEFT_KNEE],
+              jointC: poseData[LEFT_ANKLE],
+            })}{" "}
+            {"\n"}
+            Prev theta: {prevAngleRef.current}
+          </Text>
+        ) : (
+          <Text>No Pose</Text>
+        )}
       </View>
     </SafeAreaView>
   );
