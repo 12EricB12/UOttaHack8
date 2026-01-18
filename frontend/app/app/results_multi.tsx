@@ -4,7 +4,7 @@
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-function ResultsScreen({ route, navigation }: any) {
+function ResultsScreenMulti({ route, navigation }: any) {
   const { score, completionTime, feedback } = route.params;
 
   return (
@@ -136,4 +136,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ResultsScreen;
+export default ResultsScreenMulti;

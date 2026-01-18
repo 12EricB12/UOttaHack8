@@ -6,6 +6,7 @@ import { Double } from "react-native/Libraries/Types/CodegenTypes";
 import * as FileSystem from "expo-file-system/legacy";
 import * as MediaLibrary from "expo-media-library";
 import { useNavigation } from "@react-navigation/native";
+import { io, Socket } from "socket.io-client";
 
 // This is the HTML/JS code that runs INSIDE the hidden browser
 // Stolen and converted from https://codepen.io/mediapipe-preview/pen/abRLMxN
@@ -307,7 +308,7 @@ const getAverage = (array: any[]) => {
   return s / len;
 };
 
-function WebviewTest({ navigation }: { navigation: any }) {
+function WebviewTestMulti({ navigation }: { navigation: any }) {
   const webviewRef = useRef<WebView>(null);
   const [poseData, setPoseData] = useState<any>(null);
   const prevAngleRef = useRef<any | null>(null);
@@ -330,6 +331,15 @@ function WebviewTest({ navigation }: { navigation: any }) {
   const RIGHT_KNEE = 26;
   const RIGHT_ANKLE = 28;
   const max_num_reps = 3;
+  const MAX_REPS = 3;
+
+  // Game State
+  const [status, setStatus] = useState<
+    "IDLE" | "SEARCHING" | "COUNTDOWN" | "PLAYING" | "FINISHED"
+  >("IDLE");
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [roomId, setRoomId] = useState<string | null>(null);
+  const [opponentReps, setOpponentReps] = useState(0);
 
   // Handle data coming FROM the WebView
   const handleMessage = async (event: any) => {
@@ -428,7 +438,7 @@ function WebviewTest({ navigation }: { navigation: any }) {
         allScores.current.push(data.analysis.overall_rating);
         feedback.current = data.analysis.overall_comment;
         if (allScores.current.length >= max_num_reps) {
-          navigation.navigate("Results", {
+          navigation.navigate("ResultsMulti", {
             score: getAverage(allScores.current),
             completionTime: endTime.current - startTime.current,
             feedback: feedback.current,
@@ -438,6 +448,47 @@ function WebviewTest({ navigation }: { navigation: any }) {
       console.log(allScores.current);
     } catch (error) {
       console.error("Analysis failed:", error);
+    }
+  };
+
+  // 1. Initialize Socket Connection
+  useEffect(() => {
+    const newSocket = io(SERVER_URL);
+    setSocket(newSocket);
+
+    // Socket Listeners
+    newSocket.on("connect", () => console.log("Connected to server"));
+
+    newSocket.on("match_found", (data) => {
+      console.log("Match found!", data);
+      setRoomId(data.roomId);
+      setStatus("COUNTDOWN");
+    });
+
+    newSocket.on("opponent_progress", (data) => {
+      setOpponentReps(data.reps);
+    });
+
+    newSocket.on("game_over", (data) => {
+      setStatus("FINISHED");
+      const result = data.winnerId === newSocket.id ? "WIN" : "LOSE";
+      navigation.navigate("VersusResults", {
+        result: result,
+        myReps: myReps,
+        opponentReps: opponentReps,
+      });
+    });
+
+    return () => {
+      newSocket.disconnect();
+    };
+  }, [navigation, myReps, opponentReps]); // Add deps to ensure state is captured if needed, mostly handled via refs in bigger apps
+
+  // 2. Start Matchmaking
+  const findMatch = () => {
+    if (socket) {
+      setStatus("SEARCHING");
+      socket.emit("join_queue");
     }
   };
 
@@ -552,6 +603,56 @@ function WebviewTest({ navigation }: { navigation: any }) {
           <Text>No Pose</Text>
         )}
       </View>
+      {/* UI Overlays based on State */}
+
+      {status === "IDLE" && (
+        <View style={styles.centerOverlay}>
+          <Text style={styles.titleText}>1v1 Versus Mode</Text>
+          <Text style={styles.subText}>Race to {MAX_REPS} reps!</Text>
+          <TouchableOpacity onPress={findMatch} style={styles.startButton}>
+            <Text style={styles.buttonText}>FIND OPPONENT</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {status === "SEARCHING" && (
+        <View style={styles.centerOverlay}>
+          <ActivityIndicator size="large" color="#ee8d2f" />
+          <Text style={styles.infoText}>Searching for player...</Text>
+        </View>
+      )}
+
+      {status === "COUNTDOWN" && (
+        <CountdownTimer
+          initialValue={3}
+          onFinish={() => setStatus("PLAYING")}
+        />
+      )}
+
+      {status === "PLAYING" && (
+        <View style={styles.hudOverlay}>
+          {/* My Score */}
+          <View style={styles.scoreBox}>
+            <Text style={styles.scoreLabel}>YOU</Text>
+            <Text style={styles.scoreValue}>
+              {myReps}/{MAX_REPS}
+            </Text>
+          </View>
+
+          {/* VS Badge */}
+          <View style={styles.vsBadge}>
+            <Text style={styles.vsText}>VS</Text>
+          </View>
+
+          {/* Opponent Score */}
+          <View style={[styles.scoreBox, { backgroundColor: "#d9534f" }]}>
+            <Text style={styles.scoreLabel}>ENEMY</Text>
+            <Text style={styles.scoreValue}>
+              {opponentReps}/{MAX_REPS}
+            </Text>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -570,4 +671,4 @@ const styles = StyleSheet.create({
   text: { color: "white", fontSize: 24 },
 });
 
-export default WebviewTest;
+export default WebviewTestMulti;

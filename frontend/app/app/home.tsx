@@ -1,61 +1,64 @@
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
-import {
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
-} from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 function HomeScreen({ navigation }: { navigation: any }) {
   return (
-    <LinearGradient
-        colors={['#ffffff', '#ee8d2f']}
-        style={styles.background}
-    >
-    <View style={styles.container}>
-      <Image
-      source={require("../assets/images/applogo.png")}
-      style={styles.topRightImage} 
-      />
+    <LinearGradient colors={["#ffffff", "#ee8d2f"]} style={styles.background}>
+      <View style={styles.container}>
+        <Image
+          source={require("../assets/images/applogo.png")}
+          style={styles.topRightImage}
+        />
 
-      <Image
-      source={require("../assets/images/bodybuilder.png")}
-      style={{
-        position: "absolute",
-        top: "50%",
-        left: -190,
-        width: 800,
-        height: 650,
-        resizeMode: "contain",
-      }}
-      />
+        <Image
+          source={require("../assets/images/bodybuilder.png")}
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: -190,
+            width: 800,
+            height: 650,
+            resizeMode: "contain",
+          }}
+        />
 
-      <Text style={styles.titleText}>FORMWATCH</Text>
-      <Text style={{color: "black",
-                    position: "absolute",
-                    top: 120,
-                    marginLeft: 35,
-                    fontSize: 24,
-                    fontWeight: "500"}}>Welcome! Ready to workout?!</Text>
-      {/* Middle Content */}
-      <View style={styles.centerContent}>
-        <TouchableOpacity
-          style={[styles.bigButton, {position: 'absolute', top: 0, marginTop: 70}]}
-          onPress={() => navigation.navigate("ActiveWorkout")}
+        <Text style={styles.titleText}>FORMWATCH</Text>
+        <Text
+          style={{
+            color: "black",
+            position: "absolute",
+            top: 120,
+            marginLeft: 35,
+            fontSize: 24,
+            fontWeight: "500",
+          }}
         >
-          <Text style={styles.bigButtonText}>Start a Solo Workout!</Text>
-        </TouchableOpacity>
+          Welcome! Ready to workout?!
+        </Text>
+        {/* Middle Content */}
+        <View style={styles.centerContent}>
+          <TouchableOpacity
+            style={[
+              styles.bigButton,
+              { position: "absolute", top: 0, marginTop: 70 },
+            ]}
+            onPress={() => navigation.navigate("ActiveWorkout")}
+          >
+            <Text style={styles.bigButtonText}>Start a Solo Workout!</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.bigButton, {position: 'absolute', top: 100, marginTop: 70}]}
-          onPress={() => console.log("Start A Ranked Workout clicked")}
-        >
-          <Text style={styles.bigButtonText}>Start A Ranked Workout!</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.bigButton,
+              { position: "absolute", top: 100, marginTop: 70 },
+            ]}
+            onPress={() => console.log("Start A Ranked Workout clicked")}
+          >
+            <Text style={styles.bigButtonText}>Start A Ranked Workout!</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
     </LinearGradient>
   );
 }
@@ -111,8 +114,8 @@ const styles = StyleSheet.create({
     marginLeft: 35,
     fontSize: 36,
     fontWeight: "bold",
-    color: ""
-  }, 
+    color: "",
+  },
   topRightImage: {
     position: "absolute",
     top: 50,
@@ -122,7 +125,7 @@ const styles = StyleSheet.create({
     resizeMode: "contain",
   },
   background: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     right: 0,
     top: 0,
