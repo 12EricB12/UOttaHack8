@@ -30,10 +30,9 @@ const MEDIAPIPE_HTML = `
       position: absolute;
       top: 0;
       left: 0;
-      widthf: 100%;
+      width: 100%;
       height: 100%;
       object-fit: cover;
-      transform: scaleX(-1);
     }
     #status {
       position: absolute;
@@ -479,10 +478,10 @@ function WebviewTest({ navigation }: { navigation: any }) {
   }, [poseData, isMeasuring]);
 
   useEffect(() => {
-    if (repCount >= max_num_reps) {
+    if (allScores.current.length >= max_num_reps) {
       navigation.navigate("Results");
     }
-  });
+  }, [repCount, allScores]);
 
   if (!permission?.granted) {
     return (
@@ -534,7 +533,8 @@ function WebviewTest({ navigation }: { navigation: any }) {
         {poseData ? (
           <Text style={styles.text}>
             Left Knee: {poseData[LEFT_KNEE].y.toFixed(2)} {"\n"}
-            Reps done: {repCount >= max_num_reps ? "Done!" : repCount}
+            Reps done:{" "}
+            {repCount >= max_num_reps ? "Done! Please wait..." : repCount}
           </Text>
         ) : (
           <Text>No Pose</Text>
