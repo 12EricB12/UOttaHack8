@@ -1,0 +1,154 @@
+{
+  "squat": {
+    "classification_joints": {
+      "left": ["LEFT_SHOULDER", "LEFT_KNEE", "LEFT_HIP"],
+      "right": ["RIGHT_SHOULDER", "RIGHT_KNEE", "RIGHT_HIP"],
+      "front": [
+        "LEFT_SHOULDER",
+        "LEFT_KNEE",
+        "LEFT_HIP",
+        "RIGHT_SHOULDER",
+        "RIGHT_KNEE",
+        "RIGHT_HIP"
+      ]
+    },
+    "action_joints": {
+      "LEFT_KNEE": ["LEFT_HIP", "LEFT_ANKLE"],
+      "RIGHT_KNEE": ["RIGHT_HIP", "RIGHT_ANKLE"]
+    },
+    "assessment_side": {
+      "upper_body": {
+        "head_position": {
+          "title": "Head Position",
+          "info": "Are you facing forward?",
+          "link": "https://www.fitnessandpower.com/training/bodybuilding-misc/squat-head-position",
+          "joints": [
+            ["EAR", "MOUTH"],
+            ["EYE", "MOUTH"],
+            ["EYE", "EAR"],
+            ["EAR", "MOUTH"],
+            ["EYE_OUTER", "MOUTH"],
+            ["EYE_OUTER", "EAR"],
+            ["EAR", "MOUTH"],
+            ["EYE_INNER", "MOUTH"],
+            ["EYE_INNER", "EAR"]
+          ],
+          "assessment_type": "line",
+          "m": "inf"
+        },
+        "thoracic_position": {
+          "title": "Thoracic Position",
+          "info": "Is your chest upright?",
+          "link": "https://www.strengthresurgence.com/cant-keep-chest-up-when-squatting/",
+          "joints": [["HIP", "SHOULDER"]],
+          "assessment_type": "line",
+          "m": 2
+        },
+        "trunk_position": {
+          "title": "Trunk Position",
+          "info": "Is the line of your spine parallel to the line of your shins?",
+          "link": "https://squatuniversity.com/2016/04/20/the-real-science-of-the-squat/",
+          "joints": {
+            "first_line": [
+              ["SHOULDER", "HIP"],
+              ["THUMB", "HIP"],
+              ["INDEX", "HIP"],
+              ["PINKY", "HIP"],
+              ["WRIST", "HIP"]
+            ],
+            "second_line": [
+              ["KNEE", "HEEL"],
+              ["KNEE", "ANKLE"]
+            ]
+          },
+          "assessment_type": "parallel_lines",
+          "m": "None"
+        }
+      },
+      "lower_body": {
+        "tibial_progression_angle": {
+          "title": "Tibial Progression Angle",
+          "link": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4262933/figure/F14/",
+          "info": "How much do your knees pass in front of the foot?",
+          "joints": [["KNEE", "FOOT_INDEX"]],
+          "assessment_type": "max_line",
+          "m": -10
+        },
+        "foot_position": {
+          "title": "Foot Position",
+          "link": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4262933/figure/F15/",
+          "info": "Are your feet on the ground?",
+          "joints": [["HEEL", "FOOT_INDEX"]],
+          "assessment_type": "line",
+          "m": 0
+        },
+        "depth": {
+          "title": "Depth",
+          "link": "https://www.drewmurphystrength.com/training-tips/2016/9/22/why-squat-deep",
+          "info": "Are you hitting appropriate depth (ie. are your thighs at least parallel with the ground)?",
+          "joints": [["HIP", "KNEE"]],
+          "assessment_type": "min_line",
+          "m": 0
+        }
+      }
+    },
+    "assessment_front": {
+      "upper_body": {
+        "thoracic_position": {
+          "title": "Thoracic Position",
+          "info": "Are your shoulders level?",
+          "link": "https://squatuniversity.com/",
+          "joints": [["LEFT_SHOULDER", "RIGHT_SHOULDER"]],
+          "assessment_type": "line",
+          "m": 0
+        },
+        "trunk_position": {
+          "title": "Trunk Position",
+          "info": "Is your torso upright?",
+          "link": "https://squatuniversity.com/",
+          "joints": [["LEFT_SHOULDER", "LEFT_HIP"], ["RIGHT_SHOULDER", "RIGHT_HIP"]],
+          "assessment_type": "line",
+          "m": "inf"
+        }
+      },
+      "lower_body": {
+        "hip_position": {
+          "title": "Hip Position",
+          "link": "https://www.youtube.com/watch?v=dEZR0Mo_f6g",
+          "info": "Are your hips parallel to the ground (ie. no bias to the left or right)?",
+          "joints": [["LEFT_HIP", "RIGHT_HIP"]],
+          "assessment_type": "line",
+          "m": 0
+        },
+        "knee_position": {
+          "title": "Knee Position",
+          "link": "https://forgefitnesswichita.com/knees-caving-in-the-squat/",
+          "info": "Are your knees pointed outwards?",
+          "joints": {
+            "first_line": [
+              ["LEFT_KNEE", "LEFT_FOOT_INDEX"],
+              ["LEFT_KNEE", "LEFT_HEEL"],
+              ["LEFT_KNEE", "LEFT_ANKLE"]
+            ],
+            "second_line": [
+              ["RIGHT_KNEE", "RIGHT_FOOT_INDEX"],
+              ["RIGHT_KNEE", "RIGHT_HEEL"],
+              ["RIGHT_KNEE", "RIGHT_ANKLE"]
+            ]
+          },
+          "assessment_type": "parallel_lines",
+          "m": "inf"
+        },
+        "foot_position": {
+          "title": "Foot Position",
+          "info": "Are your feet flat on the ground?",
+          "link": "https://squatuniversity.com/",
+          "joints": [["LEFT_HEEL", "LEFT_FOOT_INDEX"], ["RIGHT_HEEL", "RIGHT_FOOT_INDEX"]],
+          "assessment_type": "line",
+          "m": 0
+        }
+      }
+    },
+    "use_angle": true
+  }
+}

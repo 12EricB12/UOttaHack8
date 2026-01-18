@@ -6,18 +6,55 @@ import {
   TouchableOpacity,
   Button,
   Dimensions,
+  Image,
 } from "react-native";
+import {LinearGradient} from "expo-linear-gradient";
 
 function HomeScreen({ navigation }: { navigation: any }) {
   return (
+    <LinearGradient
+        colors={['#ffffff', '#a998d7']}
+        style={styles.background}
+    >
     <View style={styles.container}>
+      <Image
+      source={require("../assets/images/applogo.png")}
+      style={styles.topRightImage} 
+      />
+
+      <Image
+      source={require("../assets/images/bodybuilder.png")}
+      style={{
+        position: "absolute",
+        top: "50%",
+        left: -190,
+        width: 800,
+        height: 650,
+        resizeMode: "contain",
+      }}
+      />
+
+      <Text style={styles.titleText}>GymBroAI</Text>
+      <Text style={{color: "black",
+                    position: "absolute",
+                    top: 120,
+                    marginLeft: 35,
+                    fontSize: 24,
+                    fontWeight: "500"}}>Welcome! Ready to workout?!</Text>
       {/* Middle Content */}
       <View style={styles.centerContent}>
         <TouchableOpacity
-          style={styles.bigButton}
+          style={[styles.bigButton, {position: 'absolute', top: 0, marginTop: 70}]}
           onPress={() => navigation.navigate("ActiveWorkout")}
         >
-          <Text style={styles.bigButtonText}>Go to next</Text>
+          <Text style={styles.bigButtonText}>Start a Solo Workout!</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.bigButton, {position: 'absolute', top: 100, marginTop: 70}]}
+          onPress={() => console.log("Start A Ranked Workout clicked")}
+        >
+          <Text style={styles.bigButtonText}>Start A Ranked Workout!</Text>
         </TouchableOpacity>
       </View>
 
@@ -25,26 +62,20 @@ function HomeScreen({ navigation }: { navigation: any }) {
       <View style={styles.bottomBar}>
         <TouchableOpacity
           style={styles.navButton}
-          onPress={() => console.log("Home Clicked")}
+          onPress={() => navigation.navigate("UserStats")}
         >
-          <Text style={styles.navText}>Home</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.navButton}
-          onPress={() => console.log("Matchmaking Clicked")}
-        >
-          <Text style={styles.navText}>Matchmaking</Text>
+          <Text style={styles.navText}>My Stats</Text>
         </TouchableOpacity>
       </View>
     </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "transparent",
   },
   centerContent: {
     flex: 1,
@@ -70,13 +101,13 @@ const styles = StyleSheet.create({
   },
   bottomBar: {
     flexDirection: "row",
-    height: 80,
-    borderTopWidth: 1,
-    borderTopColor: "#eee",
+    height: 79,
+    borderTopWidth: 5,
+    borderTopColor: "#000",
     justifyContent: "space-around",
     alignItems: "center",
-    paddingBottom: 20, // Padding for safe area usually
-    backgroundColor: "#f9f9f9",
+    paddingBottom: 19, // Padding for safe area usually
+    backgroundColor: "#b0a2da",
   },
   navButton: {
     padding: 10,
@@ -85,6 +116,29 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#333",
     fontWeight: "600",
+  },
+  titleText: {
+    alignItems: "center",
+    marginTop: 75,
+    marginLeft: 35,
+    fontSize: 36,
+    fontWeight: "bold",
+    color: ""
+  }, 
+  topRightImage: {
+    position: "absolute",
+    top: 50,
+    right: 20,
+    width: 75,
+    height: 75,
+    resizeMode: "contain",
+  },
+  background: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
   },
 });
 
