@@ -1,0 +1,8 @@
+{
+  "name": "gym-1v1-client",
+  "type": "module",
+  "version": "1.0.0",
+  "dependencies": {
+    "socket.io-client": "^4.7.5"
+  }
+}
