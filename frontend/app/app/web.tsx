@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { StyleSheet, View, Text, SafeAreaView } from "react-native";
+import { StyleSheet, View, Text, SafeAreaView, Alert } from "react-native";
 import { WebView } from "react-native-webview";
 import { Camera, useCameraPermissions } from "expo-camera"; // Just for permission requesting
 import { Double } from "react-native/Libraries/Types/CodegenTypes";
@@ -27,7 +27,6 @@ const MEDIAPIPE_HTML = `
     }
     video, canvas {
       position: absolute;
-      transform: scaleX(-1);
       top: 0;
       left: 0;
       width: 100%;
@@ -210,15 +209,15 @@ const MEDIAPIPE_HTML = `
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         if (result.landmarks && result.landmarks.length > 0) {
-          const drawingUtils = new DrawingUtils(ctx);
+          // const drawingUtils = new DrawingUtils(ctx);
 
-          for (const landmarks of result.landmarks) {
-            drawingUtils.drawLandmarks(landmarks, { radius: 4 });
-            drawingUtils.drawConnectors(
-              landmarks,
-              PoseLandmarker.POSE_CONNECTIONS
-            );
-          }
+          // for (const landmarks of result.landmarks) {
+          //   drawingUtils.drawLandmarks(landmarks, { radius: 4 });
+          //   drawingUtils.drawConnectors(
+          //     landmarks,
+          //     PoseLandmarker.POSE_CONNECTIONS
+          //   );
+          // }
 
           // Send landmarks to React Native
           window.ReactNativeWebView.postMessage(
@@ -263,11 +262,16 @@ const CountdownTimer = ({ initialValue, onFinish }: any) => {
   }, []); // The empty dependency array ensures the effect runs only once on mount
 
   return (
-    <View>
+    <View style={{ justifyContent: "center", alignSelf: "center" }}>
       <Text style={{ color: "white" }}>Time until start:</Text>
       <Text style={{ color: "white" }}>{timerCount}</Text>
     </View>
   );
+};
+
+const getAverage = (array: Double[]) => {
+  if (array.length === 0) return 0; // Prevents division by zero for empty arrays
+  return array.reduce((acc, c): Double => acc + c, 0) / array.length;
 };
 
 export default function WebviewTest() {
@@ -280,6 +284,7 @@ export default function WebviewTest() {
   const [permission, requestPermission] = useCameraPermissions();
   const [mediaPermission, requestMediaPermission] =
     MediaLibrary.usePermissions(); // <--- ADD THIS
+  const allScores = new Array(10);
 
   const LEFT_HIP = 23;
   const LEFT_KNEE = 25;
@@ -287,9 +292,10 @@ export default function WebviewTest() {
   const RIGHT_HIP = 24;
   const RIGHT_KNEE = 26;
   const RIGHT_ANKLE = 28;
+  const max_num_reps = 10;
 
   // Handle data coming FROM the WebView
-  const handleMessage = (event: any) => {
+  const handleMessage = async (event: any) => {
     try {
       const message = JSON.parse(event.nativeEvent.data);
 
@@ -301,7 +307,9 @@ export default function WebviewTest() {
       else if (message.type === "VIDEO_RESULT") {
         console.log("Receiving video data...");
         console.log("VIDEO RECEIVED, length:", message.data.length);
-        saveVideoFile(message.data);
+
+        const filename = await uploadVideo(message.data);
+        analyzeVideo(filename);
       }
       // Case C: Console Logs (The debug part)
       else if (message.type === "CONSOLE_LOG") {
@@ -338,38 +346,47 @@ export default function WebviewTest() {
     return Math.acos(clamp) * (180 / Math.PI);
   };
 
-  const saveVideoFile = async (base64String: string) => {
+  const uploadVideo = async (fileUri: string) => {
     try {
-      console.log("Saving video...");
+      const formData = new FormData();
+      formData.append("video", {
+        uri: fileUri,
+        name: "rep_video.webm",
+        type: "video/webm",
+      } as any);
 
-      // Check/Request Media Permissions first
-      if (!mediaPermission?.granted) {
-        const response = await requestMediaPermission();
-        if (!response.granted) {
-          alert("Permission to save video is required!");
-          return;
-        }
-      }
-
-      const base64Data = base64String.split(",")[1];
-
-      const fileUri = FileSystem.cacheDirectory + `rep_${Date.now()}.webm`;
-
-      // 1. Write to cache
-      await FileSystem.writeAsStringAsync(fileUri, base64Data, {
-        encoding: "base64",
+      const response = await fetch("http://10.198.71.51:3000/upload", {
+        method: "POST",
+        body: formData,
+        headers: { Accept: "application/json" },
       });
 
-      console.log("Written to cache:", fileUri);
+      const json = await response.json();
+      console.log(json.filename);
 
-      // 2. Save to gallery
-      const asset = await MediaLibrary.createAssetAsync(fileUri);
+      // CRITICAL: Return the filename so we can use it next
+      return json.filename;
+    } catch (error) {
+      console.error("Upload failed:", error);
+      return null;
+    }
+  };
 
-      await MediaLibrary.createAlbumAsync("WorkoutReps", asset, false);
+  // 2. Create the Analysis function
+  const analyzeVideo = async (filename: string) => {
+    try {
+      console.log(`🤖 Requesting analysis for: ${filename}`);
 
-      alert("Video saved to gallery!");
-    } catch (err) {
-      console.error("SAVE FAILED:", err);
+      // Pass the filename dynamically here
+      const response = await fetch(
+        `http://10.198.71.51:3000/analyze-gemini?filename=${filename}`,
+      );
+
+      const data = await response.json();
+      console.log("Analysis Results:", data);
+      allScores[repCount] = data.analysis.overall_rating;
+    } catch (error) {
+      console.error("Analysis failed:", error);
     }
   };
 
@@ -394,6 +411,13 @@ export default function WebviewTest() {
         prevAngleRef.current = currentAngle;
         setRepInProgress(false);
         setRepCount(repCount + 1);
+
+        if (repCount == max_num_reps - 1) {
+          Alert.alert(
+            "Your average score is...",
+            getAverage(allScores).toString(),
+          );
+        }
         // Get end video time, and encode
         setTimeout(() => {
           webviewRef.current?.postMessage(
