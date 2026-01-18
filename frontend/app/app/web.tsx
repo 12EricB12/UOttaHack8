@@ -456,7 +456,7 @@ export default function WebviewTest() {
   }, [poseData, isMeasuring]);
 
   useEffect(() => {
-    if (allScores.current.length == max_num_reps) {
+    if (allScores.current.length >= max_num_reps) {
       Alert.alert(
         "Your average score is...",
         getAverage(allScores.current).toString(),
